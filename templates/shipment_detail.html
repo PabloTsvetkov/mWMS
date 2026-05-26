@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ shipment.shipment_number }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('shipments') }}" class="btn btn-sm btn-back">← Назад</a>
+    <h1>Отгрузка {{ shipment.shipment_number }}</h1>
+    <span class="status status-{{ shipment.status }}" style="margin-left:8px">
+        {% if shipment.status == 'draft' %}Черновик
+        {% elif shipment.status == 'confirmed' %}Подтверждена
+        {% elif shipment.status == 'shipped' %}Отгружена
+        {% elif shipment.status == 'cancelled' %}Отменена
+        {% else %}{{ shipment.status }}{% endif %}
+    </span>
+</div>
+
+<!-- Карточка с деталями -->
+<div class="card" style="margin-bottom:24px">
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Дата</span>
+            <span class="detail-value">{{ shipment.shipment_date }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Со склада</span>
+            <span class="detail-value">{{ shipment.warehouse_name }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Назначение</span>
+            <span class="detail-value">{{ shipment.destination }}</span>
+        </div>
+        {% if shipment.comment %}
+        <div class="detail-item">
+            <span class="detail-label">Комментарий</span>
+            <span class="detail-value">{{ shipment.comment }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Состав отгрузки -->
+<h2 style="font-size:16px; margin-bottom:12px">Состав отгрузки</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Артикул</th>
+            <th>Товар</th>
+            <th style="text-align:right">Количество</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td><code>{{ item.sku }}</code></td>
+            <td>{{ item.product }}</td>
+            <td style="text-align:right">{{ item.quantity }} шт.</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3" class="empty">Позиций нет</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Отгрузки{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Отгрузки</h1>
+    <span id="shipments-badge" class="badge">{{ shipments | length }} записей</span>
+    <a href="{{ url_for('shipment_new') }}" class="btn btn-primary" style="margin-left:auto">+ Новая отгрузка</a>
+</div>
+
+<!-- Фильтр по статусам (multi-select) -->
+<div class="filter-bar">
+    <div id="ms-shipments-status"></div>
+    <span id="shipments-count" class="filter-count"></span>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Номер</th>
+            <th>Дата</th>
+            <th>Со склада</th>
+            <th>Назначение</th>
+            <th>Статус</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="shipments-tbody">
+        {% for s in shipments %}
+        <tr data-status="{{ s.status }}">
+            <td><a href="{{ url_for('shipment_detail', shipment_id=s.id) }}"><code>{{ s.number }}</code></a></td>
+            <td>{{ s.date }}</td>
+            <td>{{ s.warehouse }}</td>
+            <td>{{ s.destination }}</td>
+            <td>
+                <select class="inline-status-select" data-shipment-id="{{ s.id }}" data-status="{{ s.status }}">
+                    <option value="confirmed"  {% if s.status == 'confirmed'  %}selected{% endif %}>Подтверждена</option>
+                    <option value="in_transit" {% if s.status == 'in_transit' %}selected{% endif %}>В пути</option>
+                    <option value="delivered"  {% if s.status == 'delivered'  %}selected{% endif %}>Доставлена</option>
+                    <option value="archived"   {% if s.status == 'archived'   %}selected{% endif %}>Архив</option>
+                </select>
+            </td>
+            <td class="actions">
+                <a href="{{ url_for('shipment_detail', shipment_id=s.id) }}" class="btn btn-sm btn-edit">Детали</a>
+                <form method="POST" action="{{ url_for('shipment_delete', shipment_id=s.id) }}"
+                      onsubmit="return confirm('Удалить отгрузку «{{ s.number }}»?')">
+                    <button type="submit" class="btn btn-sm btn-delete">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" class="empty">Отгрузок пока нет</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

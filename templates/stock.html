@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Остатки{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Остатки</h1>
+    <span id="stock-badge" class="badge">{{ stock | length }} записей</span>
+</div>
+
+<div class="card">
+    <h2 class="card-title">Добавить запись</h2>
+    <form method="POST" action="{{ url_for('stock_add') }}" class="form-row">
+        <div class="form-group">
+            <label>Товар <span class="required">*</span></label>
+            <select name="product_id" required data-custom="single">
+                <option value="">— выбрать товар —</option>
+                {% for p in products %}
+                <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Склад <span class="required">*</span></label>
+            <select name="warehouse_id" required data-custom="single">
+                <option value="">— выбрать склад —</option>
+                {% for w in warehouses %}
+                <option value="{{ w.id }}">{{ w.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Статус <span class="required">*</span></label>
+            <select name="status" required data-custom="single-no-search">
+                <option value="">— выбрать статус —</option>
+                <option value="in_stock">На складе</option>
+                <option value="incoming">В поставке</option>
+                <option value="packing">На упаковке</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Количество <span class="required">*</span></label>
+            <input type="number" name="quantity" required min="0" value="0" style="min-width:90px">
+        </div>
+        <div class="form-group form-group-btn">
+            <button type="submit" class="btn btn-primary">Добавить</button>
+        </div>
+    </form>
+</div>
+
+<!-- Фильтры — multi-select через JS -->
+<div class="filter-bar">
+    <div id="ms-stock-warehouse"></div>
+    <div id="ms-stock-status"></div>
+    <div id="ms-stock-product"></div>
+    <button class="btn btn-secondary btn-sm" id="stock-reset-btn">Сбросить</button>
+    <span id="stock-count-filter" class="filter-count"></span>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Артикул</th>
+            <th>Товар</th>
+            <th>Склад</th>
+            <th>Статус</th>
+            <th style="text-align:right">Кол-во</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="stock-tbody">
+        {% for s in stock %}
+        <tr>
+            <td><code>{{ s.sku }}</code></td>
+            <td>{{ s.product }}</td>
+            <td>{{ s.warehouse }}</td>
+            <td>
+                <select class="inline-status-select" data-stock-id="{{ s.id }}" data-status="{{ s.status }}">
+                    <option value="incoming" {% if s.status == 'incoming' %}selected{% endif %}>В поставке</option>
+                    <option value="in_stock" {% if s.status == 'in_stock' %}selected{% endif %}>На складе</option>
+                    <option value="packing"  {% if s.status == 'packing'  %}selected{% endif %}>На упаковке</option>
+                </select>
+            </td>
+            <td style="text-align:right">{{ s.quantity }} шт.</td>
+            <td class="actions">
+                <a href="{{ url_for('stock_edit', stock_id=s.id) }}" class="btn btn-sm btn-edit">Изменить</a>
+                <form method="POST" action="{{ url_for('stock_delete', stock_id=s.id) }}"
+                      onsubmit="return confirm('Удалить эту запись?')">
+                    <button type="submit" class="btn btn-sm btn-delete">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" class="empty">Остатков пока нет</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+const STOCK_WAREHOUSES = {{ warehouses | tojson }};
+const STOCK_PRODUCTS   = {{ products | tojson }};
+const STOCK_API_URL    = "{{ url_for('api_stock') }}";
+</script>
+{% endblock %}

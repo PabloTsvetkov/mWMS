@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Склады{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Склады</h1>
+    <span class="badge">{{ warehouses | length }} складов</span>
+</div>
+
+<div class="card">
+    <h2 class="card-title">Добавить склад</h2>
+    <form method="POST" action="{{ url_for('warehouse_add') }}" class="form-row">
+        <div class="form-group">
+            <label>Название <span class="required">*</span></label>
+            <input type="text" name="name" required placeholder="Склад А">
+        </div>
+        <div class="form-group">
+            <label>Адрес</label>
+            <input type="text" name="address" placeholder="г. Москва, ул. ...">
+        </div>
+        <div class="form-group">
+            <label>Описание</label>
+            <input type="text" name="description" placeholder="Основной склад">
+        </div>
+        <div class="form-group form-group-btn">
+            <button type="submit" class="btn btn-primary">Добавить</button>
+        </div>
+    </form>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Адрес</th>
+            <th>Описание</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for w in warehouses %}
+        <tr>
+            <td>{{ w.name }}</td>
+            <td>{{ w.address or '—' }}</td>
+            <td>{{ w.description or '—' }}</td>
+            <td class="actions">
+                <a href="{{ url_for('warehouse_edit', warehouse_id=w.id) }}" class="btn btn-sm btn-edit">Изменить</a>
+                <form method="POST" action="{{ url_for('warehouse_delete', warehouse_id=w.id) }}"
+                      onsubmit="return confirm('Удалить склад «{{ w.name }}»?')">
+                    <button type="submit" class="btn btn-sm btn-delete">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" class="empty">Складов пока нет</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

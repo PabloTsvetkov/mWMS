@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WMS — {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <header>
+        <div class="header-inner">
+            <span class="logo">mWMS</span>
+            <nav>
+                <a href="{{ url_for('products') }}"
+                   class="{{ 'active' if request.endpoint == 'products' or request.endpoint == 'product_edit' }}">Товары</a>
+                <a href="{{ url_for('warehouses') }}"
+                   class="{{ 'active' if request.endpoint == 'warehouses' or request.endpoint == 'warehouse_edit' }}">Склады</a>
+                <a href="{{ url_for('stock') }}"
+                   class="{{ 'active' if request.endpoint == 'stock' or request.endpoint == 'stock_edit' }}">Остатки</a>
+                <a href="{{ url_for('shipments') }}"
+                   class="{{ 'active' if request.endpoint in ('shipments', 'shipment_new', 'shipment_detail') }}">Отгрузки</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Toast-контейнер: фиксированный, не смещает контент -->
+    <div id="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="toast toast-{{ category }}">
+                    <span class="toast-icon">{% if category == 'success' %}✓{% else %}✕{% endif %}</span>
+                    <span class="toast-text">{{ message }}</span>
+                    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

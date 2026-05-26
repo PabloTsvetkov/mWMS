@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Новая отгрузка{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('shipments') }}" class="btn btn-sm btn-back">← Назад</a>
+    <h1>Новая отгрузка</h1>
+</div>
+
+<form method="POST" class="form-col">
+    <!-- Основные данные отгрузки -->
+    <div class="card">
+        <h2 class="card-title">Основные данные</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Номер отгрузки</label>
+                <input type="text" name="shipment_number" value="{{ next_number }}" disabled>
+                <!-- disabled поле не попадает в POST, нужен скрытый input -->
+                <input type="hidden" name="shipment_number" value="{{ next_number }}">
+            </div>
+            <div class="form-group">
+                <label>Дата <span class="required">*</span></label>
+                <input type="date" name="shipment_date" required
+                       value="{{ today }}">
+            </div>
+            <div class="form-group">
+                <label>Со склада <span class="required">*</span></label>
+                <select name="warehouse_id" required>
+                    <option value="">— выбрать —</option>
+                    {% for w in warehouses %}
+                    <option value="{{ w.id }}">{{ w.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Назначение <span class="required">*</span></label>
+                <input type="text" name="destination" required placeholder="Магазин, адрес...">
+            </div>
+            <div class="form-group">
+                <label>Комментарий</label>
+                <input type="text" name="comment" placeholder="необязательно">
+            </div>
+        </div>
+    </div>
+
+    <!-- Товары в отгрузке -->
+    <div class="card">
+        <div class="shipment-items-header">
+            <h2 class="card-title">Товары</h2>
+            <button type="button" class="btn btn-sm btn-edit" onclick="addItemRow()">+ Добавить строку</button>
+        </div>
+
+        <table id="items-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th style="width:130px">Количество</th>
+                    <th style="width:50px"></th>
+                </tr>
+            </thead>
+            <tbody id="items-body">
+                <!-- Первая строка по умолчанию -->
+                <tr class="item-row">
+                    <td>
+                        <select name="product_id" class="item-product">
+                            <option value="">— выбрать товар —</option>
+                            {% for p in products %}
+                            <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" name="quantity" min="1" value="" placeholder="шт.">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-delete" onclick="removeRow(this)">✕</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Создать отгрузку</button>
+        <a href="{{ url_for('shipments') }}" class="btn btn-secondary">Отмена</a>
+    </div>
+</form>
+
+<!-- Шаблон строки для JS (скрытый) -->
+<template id="item-row-template">
+    <tr class="item-row">
+        <td>
+            <select name="product_id" class="item-product">
+                <option value="">— выбрать товар —</option>
+                {% for p in products %}
+                <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <input type="number" name="quantity" min="1" value="" placeholder="шт.">
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-delete" onclick="removeRow(this)">✕</button>
+        </td>
+    </tr>
+</template>
+{% endblock %}

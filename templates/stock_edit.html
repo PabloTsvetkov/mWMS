@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Редактировать остаток{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('stock') }}" class="btn btn-sm btn-back">← Назад</a>
+    <h1>Редактировать запись</h1>
+</div>
+
+<div class="card card-narrow">
+    <p class="record-info">
+        <strong>{{ row.product }}</strong> ({{ row.sku }})<br>
+        <span style="color:#718096">{{ row.warehouse }}</span>
+    </p>
+    <form method="POST" class="form-col">
+        <div class="form-group">
+            <label>Статус <span class="required">*</span></label>
+            <select name="status" required data-custom="single-no-search">
+                <option value="">— статус —</option>
+                <option value="in_stock"  {% if row.status == 'in_stock'  %}selected{% endif %}>На складе</option>
+                <option value="incoming"  {% if row.status == 'incoming'  %}selected{% endif %}>В поставке</option>
+                <option value="packing"   {% if row.status == 'packing'   %}selected{% endif %}>На упаковке</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Количество <span class="required">*</span></label>
+            <input type="number" name="quantity" required min="0" value="{{ row.quantity }}">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{{ url_for('stock') }}" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

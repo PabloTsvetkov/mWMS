@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Товары{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Товары</h1>
+    <span class="badge">{{ products | length }} позиций</span>
+</div>
+
+<div class="card">
+    <h2 class="card-title">Добавить товар</h2>
+    <form method="POST" action="{{ url_for('product_add') }}" class="form-row">
+        <div class="form-group">
+            <label>Артикул <span class="required">*</span></label>
+            <input type="text" name="sku" required placeholder="TS-001-M-WHT"
+                   value="{{ form_data.sku if form_data else '' }}">
+        </div>
+        <div class="form-group">
+            <label>Название <span class="required">*</span></label>
+            <input type="text" name="name" required placeholder="Футболка базовая"
+                   value="{{ form_data.name if form_data else '' }}">
+        </div>
+        <div class="form-group">
+            <label>Размер</label>
+            <input type="text" name="size" placeholder="M"
+                   value="{{ form_data.size if form_data else '' }}">
+        </div>
+        <div class="form-group">
+            <label>Цвет</label>
+            <input type="text" name="color" placeholder="Белый"
+                   value="{{ form_data.color if form_data else '' }}">
+        </div>
+        <div class="form-group form-group-btn">
+            <button type="submit" class="btn btn-primary">Добавить</button>
+        </div>
+    </form>
+</div>
+
+<div class="filter-bar">
+    <input type="text" id="products-search" placeholder="Поиск по названию или артикулу..." class="filter-input">
+    <span id="products-count" class="filter-count"></span>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Артикул</th>
+            <th>Название</th>
+            <th>Размер</th>
+            <th>Цвет</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in products %}
+        <tr>
+            <td><code>{{ p.sku }}</code></td>
+            <td>{{ p.name }}</td>
+            <td>{{ p.size or '—' }}</td>
+            <td>{{ p.color or '—' }}</td>
+            <td class="actions">
+                <a href="{{ url_for('product_edit', product_id=p.id) }}" class="btn btn-sm btn-edit">Изменить</a>
+                <form method="POST" action="{{ url_for('product_delete', product_id=p.id) }}"
+                      onsubmit="return confirm('Удалить товар «{{ p.name }}»?')">
+                    <button type="submit" class="btn btn-sm btn-delete">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="empty">Товаров пока нет</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

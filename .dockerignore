@@ -1,0 +1,8 @@
+__pycache__/
+.venv/
+*.pyc
+*.pyo
+warehouse.db
+.git/
+.idea/
+.cursor/
