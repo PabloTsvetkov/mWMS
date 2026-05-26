@@ -88,7 +88,7 @@ def product_edit(product_id):
                 (sku, name, size or None, color or None, product_id)
             )
             db.commit()
-            flash('Товар обновлён', 'success')
+            flash('Товар обновлен', 'success')
             return redirect(url_for('products'))
         except sqlite3.IntegrityError:
             flash(f'Товар с артикулом «{sku}» уже существует', 'error')
@@ -104,7 +104,7 @@ def product_delete(product_id):
     db = get_db()
     db.execute('DELETE FROM products WHERE id=?', (product_id,))
     db.commit()
-    flash('Товар удалён', 'success')
+    flash('Товар удален', 'success')
     return redirect(url_for('products'))
 
 
@@ -145,7 +145,7 @@ def warehouse_edit(warehouse_id):
             (name, address or None, description or None, warehouse_id)
         )
         db.commit()
-        flash('Склад обновлён', 'success')
+        flash('Склад обновлен', 'success')
         return redirect(url_for('warehouses'))
 
     warehouse = db.execute('SELECT * FROM warehouses WHERE id=?', (warehouse_id,)).fetchone()
@@ -157,7 +157,7 @@ def warehouse_delete(warehouse_id):
     db = get_db()
     db.execute('DELETE FROM warehouses WHERE id=?', (warehouse_id,))
     db.commit()
-    flash('Склад удалён', 'success')
+    flash('Склад удален', 'success')
     return redirect(url_for('warehouses'))
 
 
@@ -196,7 +196,7 @@ def stock_add():
         if quantity < 0:
             raise ValueError
     except (ValueError, TypeError):
-        flash('Количество должно быть целым числом ≥ 0', 'error')
+        flash('Количество должно быть целым числом >= 0', 'error')
         return redirect(url_for('stock'))
 
     if not product_id or not warehouse_id:
@@ -257,7 +257,7 @@ def stock_edit(stock_id):
             (status, quantity, stock_id)
         )
         db.commit()
-        flash('Остаток обновлён', 'success')
+        flash('Остаток обновлен', 'success')
         return redirect(url_for('stock'))
 
     row = db.execute('''

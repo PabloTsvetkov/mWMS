@@ -515,11 +515,11 @@ function initStockInlineStatus() {
               if (qtyCell) qtyCell.textContent = data.new_quantity + " шт.";
             }
             currentRow.remove();
-            showToast("Статус изменён, записи объединены", "success");
+            showToast("Статус изменен, записи объединены", "success");
           } else {
             this.dataset.status = newStatus;
             applyInlineSelectColor(this);
-            showToast("Статус обновлён", "success");
+            showToast("Статус обновлен", "success");
           }
         } catch {
           this.value = oldStatus;
@@ -600,7 +600,7 @@ if (document.getElementById("ms-shipments-status")) {
               this.closest("tr").dataset.status = status;
               applyInlineSelectColor(this);
               applyShipmentsFilter();
-              showToast("Статус обновлён", "success");
+              showToast("Статус обновлен", "success");
             } else {
               this.value = old;
               showToast("Ошибка при обновлении", "error");

@@ -13,7 +13,7 @@
         <div class="form-group">
             <label>Товар <span class="required">*</span></label>
             <select name="product_id" required data-custom="single">
-                <option value="">— выбрать товар —</option>
+                <option value="">выбрать товар</option>
                 {% for p in products %}
                 <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
                 {% endfor %}
@@ -22,7 +22,7 @@
         <div class="form-group">
             <label>Склад <span class="required">*</span></label>
             <select name="warehouse_id" required data-custom="single">
-                <option value="">— выбрать склад —</option>
+                <option value="">выбрать склад</option>
                 {% for w in warehouses %}
                 <option value="{{ w.id }}">{{ w.name }}</option>
                 {% endfor %}
@@ -31,7 +31,7 @@
         <div class="form-group">
             <label>Статус <span class="required">*</span></label>
             <select name="status" required data-custom="single-no-search">
-                <option value="">— выбрать статус —</option>
+                <option value="">выбрать статус</option>
                 <option value="in_stock">На складе</option>
                 <option value="incoming">В поставке</option>
                 <option value="packing">На упаковке</option>

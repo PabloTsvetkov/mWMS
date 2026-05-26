@@ -26,7 +26,7 @@
             <div class="form-group">
                 <label>Со склада <span class="required">*</span></label>
                 <select name="warehouse_id" required>
-                    <option value="">— выбрать —</option>
+                    <option value="">выбрать</option>
                     {% for w in warehouses %}
                     <option value="{{ w.id }}">{{ w.name }}</option>
                     {% endfor %}
@@ -63,7 +63,7 @@
                 <tr class="item-row">
                     <td>
                         <select name="product_id" class="item-product">
-                            <option value="">— выбрать товар —</option>
+                            <option value="">выбрать товар</option>
                             {% for p in products %}
                             <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
                             {% endfor %}
@@ -91,7 +91,7 @@
     <tr class="item-row">
         <td>
             <select name="product_id" class="item-product">
-                <option value="">— выбрать товар —</option>
+                <option value="">выбрать товар</option>
                 {% for p in products %}
                 <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
                 {% endfor %}
