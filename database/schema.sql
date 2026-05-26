@@ -52,10 +52,10 @@ CREATE TABLE stock (
 --  Отгрузки
 --
 --  Статусы отгрузки:
---    draft      — черновик, ещё не подтверждена
---    confirmed  — подтверждена, товар резервируется
---    shipped    — отправлена
---    cancelled  — отменена
+--    confirmed  — подтверждена, товар уже списан с остатков
+--    in_transit — отправлена, в пути
+--    delivered  — доставлена, получатель принял товар
+--    archived   — в архиве, не показывается по умолчанию
 
 CREATE TABLE shipments (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,8 +63,8 @@ CREATE TABLE shipments (
     shipment_date    TEXT NOT NULL DEFAULT (date('now')),
     warehouse_id     INTEGER NOT NULL REFERENCES warehouses(id),
     destination      TEXT NOT NULL,
-    status           TEXT NOT NULL DEFAULT 'draft'
-                         CHECK(status IN ('draft', 'confirmed', 'shipped', 'cancelled', 'archived')),
+    status           TEXT NOT NULL DEFAULT 'confirmed'
+                         CHECK(status IN ('confirmed', 'in_transit', 'delivered', 'archived')),
     comment          TEXT
 );
 

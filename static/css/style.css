@@ -191,24 +191,19 @@ code {
     color: #7a5800;
 }
 
-.status-draft {
-    background: #e2e8f0;
-    color: #4a5568;
-}
-
 .status-confirmed {
     background: #dbeafe;
     color: #1e40af;
 }
 
-.status-shipped {
-    background: #d4f7e1;
-    color: #1a6b3c;
+.status-in_transit {
+    background: #fef3c7;
+    color: #92400e;
 }
 
-.status-cancelled {
-    background: #fee2e2;
-    color: #991b1b;
+.status-delivered {
+    background: #d4f7e1;
+    color: #1a6b3c;
 }
 
 .status-archived {

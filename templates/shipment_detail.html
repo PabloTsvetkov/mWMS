@@ -6,10 +6,10 @@
     <a href="{{ url_for('shipments') }}" class="btn btn-sm btn-back">← Назад</a>
     <h1>Отгрузка {{ shipment.shipment_number }}</h1>
     <span class="status status-{{ shipment.status }}" style="margin-left:8px">
-        {% if shipment.status == 'draft' %}Черновик
-        {% elif shipment.status == 'confirmed' %}Подтверждена
-        {% elif shipment.status == 'shipped' %}Отгружена
-        {% elif shipment.status == 'cancelled' %}Отменена
+        {% if shipment.status == 'confirmed' %}Подтверждена
+        {% elif shipment.status == 'in_transit' %}В пути
+        {% elif shipment.status == 'delivered' %}Доставлена
+        {% elif shipment.status == 'archived' %}Архив
         {% else %}{{ shipment.status }}{% endif %}
     </span>
 </div>
