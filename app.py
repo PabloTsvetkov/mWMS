@@ -4,9 +4,12 @@ from datetime import date
 from flask import Flask, g, render_template, request, redirect, url_for, flash, jsonify
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'wms-secret')  # нужен для flash-сообщений
+app.secret_key = os.environ.get('SECRET_KEY', 'wms-secret')
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'warehouse.db')
+DB_PATH = os.environ.get(
+    'DB_PATH',
+    os.path.join(os.path.dirname(__file__), 'warehouse.db'),
+)
 
 
 # База данных
@@ -14,7 +17,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'warehouse.db')
 def get_db():
     if 'db' not in g:
         conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row  # строки доступны по имени колонки
+        conn.row_factory = sqlite3.Row
         g.db = conn
     return g.db
 
@@ -62,9 +65,14 @@ def product_add():
         return redirect(url_for('products'))
     except sqlite3.IntegrityError:
         flash(f'Товар с артикулом «{sku}» уже существует', 'error')
-        rows = db.execute('SELECT id, sku, name, size, color FROM products ORDER BY name').fetchall()
-        return render_template('products.html', products=rows,
-                               form_data={'sku': sku, 'name': name, 'size': size, 'color': color})
+        rows = db.execute(
+            'SELECT id, sku, name, size, color FROM products ORDER BY name'
+        ).fetchall()
+        return render_template(
+            'products.html',
+            products=rows,
+            form_data={'sku': sku, 'name': name, 'size': size, 'color': color}
+        )
 
 
 @app.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
@@ -166,23 +174,36 @@ def warehouse_delete(warehouse_id):
 @app.route('/stock')
 def stock():
     db = get_db()
-    rows = db.execute('''
+    query = '''
         SELECT
-            s.id AS id,
+            s.id,
             p.name AS product,
-            p.sku AS sku,
+            p.sku,
             w.name AS warehouse,
-            s.status AS status,
-            s.quantity AS quantity
+            s.status,
+            s.quantity
         FROM stock s
         JOIN products p ON s.product_id = p.id
         JOIN warehouses w ON s.warehouse_id = w.id
         ORDER BY p.name, w.name
-    ''').fetchall()
-    products_list = [dict(r) for r in db.execute('SELECT id, name, sku FROM products ORDER BY name').fetchall()]
-    warehouses_list = [dict(r) for r in db.execute('SELECT id, name FROM warehouses ORDER BY name').fetchall()]
-    return render_template('stock.html', stock=rows,
-                           products=products_list, warehouses=warehouses_list)
+    '''
+    rows = db.execute(query).fetchall()
+    products_list = [
+        dict(r) for r in db.execute(
+            'SELECT id, name, sku FROM products ORDER BY name'
+        ).fetchall()
+    ]
+    warehouses_list = [
+        dict(r) for r in db.execute(
+            'SELECT id, name FROM warehouses ORDER BY name'
+        ).fetchall()
+    ]
+    return render_template(
+        'stock.html',
+        stock=rows,
+        products=products_list,
+        warehouses=warehouses_list
+    )
 
 
 @app.route('/stock/add', methods=['POST'])
@@ -241,34 +262,62 @@ def stock_edit(stock_id):
                 raise ValueError
         except (ValueError, TypeError):
             flash('Количество должно быть целым числом ≥ 0', 'error')
-            row = db.execute('''
+            query = '''
                 SELECT s.id, s.status, s.quantity,
-                       p.name AS product, p.sku AS sku,
+                       p.name AS product, p.sku,
                        w.name AS warehouse
                 FROM stock s
                 JOIN products p ON s.product_id = p.id
                 JOIN warehouses w ON s.warehouse_id = w.id
                 WHERE s.id = ?
-            ''', (stock_id,)).fetchone()
+            '''
+            row = db.execute(query, (stock_id,)).fetchone()
             return render_template('stock_edit.html', row=row)
 
-        db.execute(
-            'UPDATE stock SET status=?, quantity=? WHERE id=?',
-            (status, quantity, stock_id)
-        )
+        current = db.execute(
+            'SELECT id, product_id, warehouse_id, status FROM stock WHERE id=?',
+            (stock_id,)
+        ).fetchone()
+
+        if not current:
+            flash('Запись не найдена', 'error')
+            return redirect(url_for('stock'))
+
+        target = None
+        if current['status'] != status:
+            target = db.execute(
+                'SELECT id, quantity FROM stock '
+                'WHERE product_id=? AND warehouse_id=? AND status=? AND id!=?',
+                (current['product_id'], current['warehouse_id'], status, stock_id)
+            ).fetchone()
+
+        if target:
+            db.execute(
+                'UPDATE stock SET quantity = quantity + ?, updated_at = datetime("now") WHERE id=?',
+                (quantity, target['id'])
+            )
+            db.execute('DELETE FROM stock WHERE id=?', (stock_id,))
+            flash('Остаток объединен с существующей записью', 'success')
+        else:
+            db.execute(
+                'UPDATE stock SET status=?, quantity=?, updated_at=datetime("now") WHERE id=?',
+                (status, quantity, stock_id)
+            )
+            flash('Остаток обновлен', 'success')
+
         db.commit()
-        flash('Остаток обновлен', 'success')
         return redirect(url_for('stock'))
 
-    row = db.execute('''
+    query = '''
         SELECT s.id, s.status, s.quantity,
-               p.name AS product, p.sku AS sku,
+               p.name AS product, p.sku,
                w.name AS warehouse
         FROM stock s
         JOIN products p ON s.product_id = p.id
         JOIN warehouses w ON s.warehouse_id = w.id
         WHERE s.id = ?
-    ''', (stock_id,)).fetchone()
+    '''
+    row = db.execute(query, (stock_id,)).fetchone()
     return render_template('stock_edit.html', row=row)
 
 
@@ -286,18 +335,19 @@ def stock_delete(stock_id):
 @app.route('/shipments')
 def shipments():
     db = get_db()
-    rows = db.execute('''
+    query = '''
         SELECT
-            sh.id AS id,
+            sh.id,
             sh.shipment_number AS number,
             sh.shipment_date AS date,
             w.name AS warehouse,
-            sh.destination AS destination,
-            sh.status AS status
+            sh.destination,
+            sh.status
         FROM shipments sh
         JOIN warehouses w ON sh.warehouse_id = w.id
         ORDER BY sh.shipment_date DESC
-    ''').fetchall()
+    '''
+    rows = db.execute(query).fetchall()
     return render_template('shipments.html', shipments=rows)
 
 
@@ -305,12 +355,55 @@ def shipments():
 def shipment_new():
     db = get_db()
 
+    def _render_shipment_form(form_data=None, form_items=None, error=None):
+        if error:
+            flash(error, 'error')
+
+        products_list = db.execute(
+            'SELECT id, name, sku FROM products ORDER BY name'
+        ).fetchall()
+        warehouses_list = db.execute(
+            'SELECT id, name FROM warehouses ORDER BY name'
+        ).fetchall()
+        count = db.execute('SELECT COUNT(*) AS c FROM shipments').fetchone()['c']
+        next_number = f'SHP-{count + 1:03d}'
+
+        if form_data is None:
+            form_data = {
+                'shipment_number': next_number,
+                'shipment_date': date.today().isoformat(),
+                'warehouse_id': '',
+                'destination': '',
+                'comment': ''
+            }
+
+        if not form_items:
+            form_items = [{'product_id': '', 'quantity': ''}]
+
+        return render_template(
+            'shipment_new.html',
+            products=products_list,
+            warehouses=warehouses_list,
+            next_number=form_data.get('shipment_number') or next_number,
+            today=form_data.get('shipment_date') or date.today().isoformat(),
+            form_data=form_data,
+            form_items=form_items
+        )
+
     if request.method == 'POST':
         number = request.form['shipment_number'].strip()
         shipment_date = request.form['shipment_date']
         warehouse_id = request.form['warehouse_id']
         destination = request.form['destination'].strip()
         comment = request.form['comment'].strip()
+
+        form_data = {
+            'shipment_number': number,
+            'shipment_date': shipment_date,
+            'warehouse_id': warehouse_id,
+            'destination': destination,
+            'comment': comment
+        }
 
         # собираем позиции из формы
         product_ids = request.form.getlist('product_id')
@@ -321,37 +414,42 @@ def shipment_new():
             if not pid or not qty:
                 continue
             try:
-                items.append((int(pid), int(qty)))
+                qty_int = int(qty)
+                if qty_int > 0:
+                    items.append((int(pid), qty_int))
             except (ValueError, TypeError):
                 pass
-        items = [(pid, qty) for pid, qty in items if qty > 0]
 
-        def _error(msg):
-            flash(msg, 'error')
-            p_list = db.execute('SELECT id, name, sku FROM products ORDER BY name').fetchall()
-            w_list = db.execute('SELECT id, name FROM warehouses ORDER BY name').fetchall()
-            cnt = db.execute('SELECT COUNT(*) AS c FROM shipments').fetchone()['c']
-            return render_template('shipment_new.html',
-                                   products=p_list, warehouses=w_list,
-                                   next_number=f'SHP-{cnt + 1:03d}',
-                                   today=date.today().isoformat())
+        merged_items = {}
+        for product_id, qty in items:
+            merged_items[product_id] = merged_items.get(product_id, 0) + qty
+        items = list(merged_items.items())
+        form_items = [{'product_id': str(pid), 'quantity': qty} for pid, qty in items]
 
         if not items:
-            return _error('Добавьте хотя бы один товар в отгрузку')
+            return _render_shipment_form(form_data, form_items,
+                                         'Добавьте хотя бы один товар в отгрузку')
 
         # проверяем остатки на складе
         for product_id, qty in items:
-            available = db.execute('''
+            query = '''
                 SELECT COALESCE(SUM(quantity), 0) AS total
                 FROM stock
                 WHERE product_id=? AND warehouse_id=? AND status='in_stock'
-            ''', (product_id, warehouse_id)).fetchone()['total']
+            '''
+            available = db.execute(query, (product_id, warehouse_id)).fetchone()['total']
 
             if available < qty:
                 product_name = db.execute(
                     'SELECT name FROM products WHERE id=?', (product_id,)
                 ).fetchone()['name']
-                return _error(
+                form_items = [
+                    item for item in form_items
+                    if int(item['product_id']) != product_id
+                ]
+                return _render_shipment_form(
+                    form_data,
+                    form_items,
                     f'Недостаточно товара «{product_name}» на складе. '
                     f'Доступно: {available} шт., запрошено: {qty} шт.'
                 )
@@ -359,12 +457,17 @@ def shipment_new():
         # создаем отгрузку
         try:
             cursor = db.execute(
-                'INSERT INTO shipments (shipment_number, shipment_date, warehouse_id, destination, status, comment) '
+                'INSERT INTO shipments '
+                '(shipment_number, shipment_date, warehouse_id, destination, status, comment) '
                 'VALUES (?, ?, ?, ?, ?, ?)',
                 (number, shipment_date, warehouse_id, destination, 'confirmed', comment or None)
             )
         except sqlite3.IntegrityError:
-            return _error(f'Отгрузка с номером «{number}» уже существует')
+            return _render_shipment_form(
+                form_data,
+                form_items,
+                f'Отгрузка с номером «{number}» уже существует'
+            )
         shipment_id = cursor.lastrowid
 
         # добавляем позиции и списываем остатки
@@ -374,45 +477,37 @@ def shipment_new():
                 (shipment_id, product_id, qty)
             )
             # списываем из in_stock
-            db.execute('''
-                UPDATE stock SET quantity = quantity - ?
-                WHERE product_id=? AND warehouse_id=? AND status='in_stock'
-            ''', (qty, product_id, warehouse_id))
+            db.execute(
+                'UPDATE stock SET quantity = quantity - ? '
+                'WHERE product_id=? AND warehouse_id=? AND status=\'in_stock\'',
+                (qty, product_id, warehouse_id)
+            )
 
         db.commit()
         flash(f'Отгрузка {number} создана', 'success')
         return redirect(url_for('shipments'))
 
-    products_list = db.execute('SELECT id, name, sku FROM products ORDER BY name').fetchall()
-    warehouses_list = db.execute('SELECT id, name FROM warehouses ORDER BY name').fetchall()
-
-    # номер следующей отгрузки
-    count = db.execute('SELECT COUNT(*) AS c FROM shipments').fetchone()['c']
-    next_number = f'SHP-{count + 1:03d}'
-
-    return render_template('shipment_new.html',
-                           products=products_list,
-                           warehouses=warehouses_list,
-                           next_number=next_number,
-                           today=date.today().isoformat())
+    return _render_shipment_form()
 
 
 @app.route('/shipments/<int:shipment_id>')
 def shipment_detail(shipment_id):
     db = get_db()
-    shipment = db.execute('''
+    query = '''
         SELECT sh.*, w.name AS warehouse_name
         FROM shipments sh
         JOIN warehouses w ON sh.warehouse_id = w.id
         WHERE sh.id = ?
-    ''', (shipment_id,)).fetchone()
+    '''
+    shipment = db.execute(query, (shipment_id,)).fetchone()
 
-    items = db.execute('''
+    query = '''
         SELECT p.name AS product, p.sku, si.quantity
         FROM shipment_items si
         JOIN products p ON si.product_id = p.id
         WHERE si.shipment_id = ?
-    ''', (shipment_id,)).fetchall()
+    '''
+    items = db.execute(query, (shipment_id,)).fetchall()
 
     return render_template('shipment_detail.html', shipment=shipment, items=items)
 
@@ -490,7 +585,8 @@ def api_stock_status(stock_id):
 
     # ищем строку с новым статусом
     target = db.execute(
-        'SELECT id, quantity FROM stock WHERE product_id=? AND warehouse_id=? AND status=? AND id!=?',
+        'SELECT id, quantity FROM stock '
+        'WHERE product_id=? AND warehouse_id=? AND status=? AND id!=?',
         (current['product_id'], current['warehouse_id'], new_status, stock_id)
     ).fetchone()
 
@@ -503,9 +599,13 @@ def api_stock_status(stock_id):
         )
         db.execute('DELETE FROM stock WHERE id=?', (stock_id,))
         db.commit()
-        return jsonify({'ok': True, 'merged': True,
-                        'target_id': target['id'], 'new_quantity': new_qty,
-                        'new_status': new_status})
+        return jsonify({
+            'ok': True,
+            'merged': True,
+            'target_id': target['id'],
+            'new_quantity': new_qty,
+            'new_status': new_status
+        })
     else:
         db.execute(
             'UPDATE stock SET status=?, updated_at=datetime("now") WHERE id=?',
@@ -527,6 +627,7 @@ def api_shipment_status(shipment_id):
     db = get_db()
     db.execute('UPDATE shipments SET status=? WHERE id=?', (new_status, shipment_id))
     db.commit()
+    return jsonify({'ok': True, 'status': new_status})
     return jsonify({'ok': True, 'status': new_status})
 
 

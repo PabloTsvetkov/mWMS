@@ -30,18 +30,19 @@ def run():
     line()
     print('ОСТАТКИ (товар / склад / статус / кол-во):')
     line()
-    rows = conn.execute('''
+    query = '''
         SELECT
             p.name AS product,
-            p.sku AS sku,
+            p.sku,
             w.name AS warehouse,
-            s.status AS status,
+            s.status,
             s.quantity AS qty
         FROM stock s
         JOIN products p ON s.product_id = p.id
         JOIN warehouses w ON s.warehouse_id = w.id
         ORDER BY p.name, w.name, s.status
-    ''').fetchall()
+    '''
+    rows = conn.execute(query).fetchall()
     for r in rows:
         print(f"  {r['product']:<25} | {r['warehouse']:<12} | {r['status']:<10} | {r['qty']} шт.")
 
@@ -49,17 +50,18 @@ def run():
     line()
     print('ОТГРУЗКИ:')
     line()
-    rows = conn.execute('''
+    query = '''
         SELECT
             sh.shipment_number AS num,
             sh.shipment_date AS date,
             w.name AS warehouse,
             sh.destination AS dest,
-            sh.status AS status
+            sh.status
         FROM shipments sh
         JOIN warehouses w ON sh.warehouse_id = w.id
         ORDER BY sh.shipment_date
-    ''').fetchall()
+    '''
+    rows = conn.execute(query).fetchall()
     for r in rows:
         print(f"  {r['num']}  {r['date']}  | {r['warehouse']:<12} -> {r['dest']:<35} | {r['status']}")
 

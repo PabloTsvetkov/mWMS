@@ -7,9 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Создаем тестовую SQLite-базу внутри образа.
-RUN python database/init_db.py
-
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+CMD ["sh", "-c", "python database/init_db.py && python app.py"]

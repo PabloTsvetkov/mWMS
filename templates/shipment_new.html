@@ -21,24 +21,29 @@
             <div class="form-group">
                 <label>Дата <span class="required">*</span></label>
                 <input type="date" name="shipment_date" required
-                       value="{{ today }}">
+                       value="{{ form_data.shipment_date if form_data else today }}">
             </div>
             <div class="form-group">
                 <label>Со склада <span class="required">*</span></label>
                 <select name="warehouse_id" required>
                     <option value="">выбрать</option>
                     {% for w in warehouses %}
-                    <option value="{{ w.id }}">{{ w.name }}</option>
+                    <option value="{{ w.id }}"
+                            {% if form_data and form_data.warehouse_id|string == w.id|string %}selected{% endif %}>
+                        {{ w.name }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="form-group">
                 <label>Назначение <span class="required">*</span></label>
-                <input type="text" name="destination" required placeholder="Магазин, адрес...">
+                <input type="text" name="destination" required placeholder="Магазин, адрес..."
+                       value="{{ form_data.destination if form_data else '' }}">
             </div>
             <div class="form-group">
                 <label>Комментарий</label>
-                <input type="text" name="comment" placeholder="необязательно">
+                <input type="text" name="comment" placeholder="необязательно"
+                       value="{{ form_data.comment if form_data else '' }}">
             </div>
         </div>
     </div>
@@ -59,23 +64,28 @@
                 </tr>
             </thead>
             <tbody id="items-body">
-                <!-- Первая строка по умолчанию -->
+                {% for item in form_items %}
                 <tr class="item-row">
                     <td>
                         <select name="product_id" class="item-product">
                             <option value="">выбрать товар</option>
                             {% for p in products %}
-                            <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+                            <option value="{{ p.id }}"
+                                    {% if item.product_id|string == p.id|string %}selected{% endif %}>
+                                {{ p.name }} ({{ p.sku }})
+                            </option>
                             {% endfor %}
                         </select>
                     </td>
                     <td>
-                        <input type="number" name="quantity" min="1" value="" placeholder="шт.">
+                        <input type="number" name="quantity" min="1"
+                               value="{{ item.quantity }}" placeholder="шт.">
                     </td>
                     <td>
                         <button type="button" class="btn btn-sm btn-delete" onclick="removeRow(this)">✕</button>
                     </td>
                 </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
